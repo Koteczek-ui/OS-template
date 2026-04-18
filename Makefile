@@ -1,7 +1,7 @@
 BINARY_DIR = bin
 TEMP_DIR = bin/tmp
 SRC_DIR = src
-IMAGE_NAME = $(BINARY_DIR)/os-image.bin
+IMAGE_NAME = $(BINARY_DIR)/os-img.bin
 HDD_NAME = $(BINARY_DIR)/harddrive.img
 KERNEL_BIN = $(BINARY_DIR)/kernel.bin
 
