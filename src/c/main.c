@@ -2,17 +2,19 @@
 #include "utils/keyboard/keyboard.h"
 #include "utils/io/io.h"
 #include "verinfo.h"
+#include "intr/intr.h"
 
 void print_welcome() {
-    print("Hello, world!\n", 0x0F);
-    print("Kernel works!", 0x02);
-    print(" ", 0x0F);
-    print(VER, 0x0F);
-    print("\n", 0x0F);
+    kprint("Hello, world!\n", 0x0F);
+    kprint("Kernel works!", 0x02);
+    kprint(" ", 0x0F);
+    kprint(VER, 0x0F);
+    kprint("\n", 0x00);
 }
 
 void setup() {
-    clear(0x00);
+    interrupts_init();
+    kclear(0x00);
     print_welcome();
 }
 
@@ -30,7 +32,7 @@ void input() {
                         pos--;
                         set_cur_pos(pos);
 
-                        print(" ", 0x0F);
+                        kprint(" ", 0x0F);
 
                         set_cur_pos(pos);
                     }
@@ -38,7 +40,7 @@ void input() {
                     char str[2];
                     str[0] = c;
                     str[1] = '\0';
-                    print(str, 0x0F);
+                    kprint(str, 0x0F);
                 }
             }
         }

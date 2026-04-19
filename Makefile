@@ -3,12 +3,14 @@ BIN_DIR = bin
 TMP_DIR = $(BIN_DIR)/tmp
 SRC_DIR = src
 C_CODE_DIR = $(SRC_DIR)/c
+ASM_CODE_DIR = $(SRC_DIR)/asm
 
 # names config
 IMG_NAME = $(BIN_DIR)/os-img.bin
 HDD_NAME = $(BIN_DIR)/harddrive.img
 KERNEL_BIN = $(BIN_DIR)/kernel.bin
-BOOT_NAME = $(SRC_DIR)/boot.asm
+BOOT_NAME = $(ASM_CODE_DIR)/boot.asm
+INTERUPPTS_NAME = $(ASM_CODE_DIR)/interrupts.asm
 
 # operating system for tools
 OS_TYPE := $(shell uname -s 2>/dev/null || echo Windows_NT)
@@ -27,6 +29,7 @@ INC_FLAGS = -I$(SRC_DIR)
 
 # objects config
 OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(TMP_DIR)/%.o,$(C_SOURCES))
+ASM_INTERRUPTS_OBJ = $(TMP_DIR)/asm/interrupts.o
 
 all: check_tools build_dirs $(HDD_NAME) run
 
@@ -67,7 +70,7 @@ $(TMP_DIR)/%.o: $(SRC_DIR)/%.c
 	gcc -ffreestanding -m32 -fno-pie -fno-stack-protector -c $< -o $@ $(INC_FLAGS) || (echo "GCC failed on $< with Error Level $$?"; exit 1)
 
 # kernel linking
-$(KERNEL_BIN): $(OBJECTS)
+$(KERNEL_BIN): $(OBJECTS) $(ASM_INTERRUPTS_OBJ)
 	@echo "--- Linking Kernel ---"
 	ld -m elf_i386 -T linker.ld $^ -o $@ || (echo "Linker failed"; exit 1)
 
@@ -75,6 +78,12 @@ $(KERNEL_BIN): $(OBJECTS)
 $(BIN_DIR)/boot.bin: $(BOOT_NAME)
 	@echo "--- Compiling Bootloader ---"
 	nasm -f bin $< -o $@ || (echo "NASM failed"; exit 1)
+	
+# interrupts.asm compiling
+$(ASM_INTERRUPTS_OBJ): $(INTERUPPTS_NAME)
+	@$(call MKDIR,$(dir $@))
+	@echo "--- Compiling ASM Interrupts ---"
+	nasm -f elf32 $< -o $@ || (echo "NASM failed on $<"; exit 1)
 
 # creating 512MB virtual hard drive image
 $(HDD_NAME): $(BIN_DIR)/boot.bin $(KERNEL_BIN)
