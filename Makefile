@@ -23,6 +23,14 @@ else
     RM = rm -rf
 endif
 
+ifneq ($(filter clean,$(MAKECMDGOALS)),)
+    ifeq ($(OS_TYPE),Windows_NT)
+        CLEAN_INFO = @echo "--- Cleaning Windows build files ---"
+    else
+        CLEAN_INFO = @echo "--- Cleaning Linux build files ---"
+    endif
+endif
+
 # sources & flags config
 C_SOURCES = $(shell find $(C_CODE_DIR) -name "*.c")
 INC_FLAGS = -I$(SRC_DIR)
@@ -98,7 +106,12 @@ run: $(HDD_NAME)
 	qemu-system-i386 -drive format=raw,file=$< -m 256
 
 clean:
+	$(CLEAN_INFO)
+ifeq ($(OS_TYPE),Windows_NT)
+	@if exist $(BIN_DIR) $(RM) $(subst /,\,$(BIN_DIR))
+else
 	@$(RM) $(BIN_DIR)
+endif
 
 .PHONY: all check_tools build_dirs run clean
 
