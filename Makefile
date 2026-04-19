@@ -1,9 +1,9 @@
-BINARY_DIR = bin
-TEMP_DIR = bin/tmp
+BIN_DIR = bin
+TMP_DIR = $(BIN_DIR)/tmp
 SRC_DIR = src
-IMAGE_NAME = $(BINARY_DIR)/os-img.bin
-HDD_NAME = $(BINARY_DIR)/harddrive.img
-KERNEL_BIN = $(BINARY_DIR)/kernel.bin
+IMG_NAME = $(BIN_DIR)/os-img.bin
+HDD_NAME = $(BIN_DIR)/harddrive.img
+KERNEL_BIN = $(BIN_DIR)/kernel.bin
 
 OS_TYPE := $(shell uname -s 2>/dev/null || echo Windows_NT)
 
@@ -18,7 +18,7 @@ endif
 C_SOURCES = $(shell find $(SRC_DIR) -name "*.c")
 INC_FLAGS = -I$(SRC_DIR)
 
-OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(TEMP_DIR)/%.o,$(C_SOURCES))
+OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(TMP_DIR)/%.o,$(C_SOURCES))
 
 all: check_tools build_dirs $(HDD_NAME) run
 
@@ -46,10 +46,10 @@ check_tools:
 	done
 
 build_dirs:
-	@$(call MKDIR,$(BINARY_DIR))
-	@$(call MKDIR,$(TEMP_DIR))
+	@$(call MKDIR,$(BIN_DIR))
+	@$(call MKDIR,$(TMP_DIR))
 
-$(TEMP_DIR)/%.o: $(SRC_DIR)/%.c
+$(TMP_DIR)/%.o: $(SRC_DIR)/%.c
 	@$(call MKDIR,$(dir $@))
 	@echo "Compiling: $<"
 	gcc -ffreestanding -m32 -fno-pie -fno-stack-protector -c $< -o $@ $(INC_FLAGS) || (echo "GCC failed on $< with Error Level $$?"; exit 1)
@@ -58,11 +58,11 @@ $(KERNEL_BIN): $(OBJECTS)
 	@echo "--- Linking Kernel ---"
 	ld -m elf_i386 -Ttext 0x1000 $^ -e main --oformat binary -o $@ || (echo "Linker failed with Error Level $$?"; exit 1)
 
-$(IMAGE_NAME): $(KERNEL_BIN) boot.asm
+$(IMG_NAME): $(KERNEL_BIN) boot.asm
 	@echo "--- Compiling Bootloader (incorporating kernel) ---"
 	nasm -f bin boot.asm -o $@ || (echo "NASM failed with Error Level $$?"; exit 1)
 
-$(HDD_NAME): $(IMAGE_NAME)
+$(HDD_NAME): $(IMG_NAME)
 	@echo "--- Creating 512MB Hard Drive Image ---"
 	dd if=/dev/zero of=$@ bs=1M count=512 status=none
 	dd if=$< of=$@ conv=notrunc status=none || (echo "DD failed with Error Level $$?"; exit 1)
@@ -72,7 +72,7 @@ run: $(HDD_NAME)
 	qemu-system-i386 -drive format=raw,file=$< -m 256
 
 clean:
-	@$(RM) $(BINARY_DIR)
+	@$(RM) $(BIN_DIR)
 
 .PHONY: all check_tools build_dirs run clean
 
