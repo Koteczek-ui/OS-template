@@ -2,24 +2,27 @@
 BIN_DIR = bin
 TMP_DIR = $(BIN_DIR)/tmp
 SRC_DIR = src
+C_CODE_DIR = $(SRC_DIR)/c
+
 # names config
 IMG_NAME = $(BIN_DIR)/os-img.bin
 HDD_NAME = $(BIN_DIR)/harddrive.img
 KERNEL_BIN = $(BIN_DIR)/kernel.bin
+BOOT_NAME = $(SRC_DIR)/boot.asm
 
 # operating system for tools
 OS_TYPE := $(shell uname -s 2>/dev/null || echo Windows_NT)
 
-ifeq ($(OS_TYPE),Windows_NT) # if system is windows
+ifeq ($(OS_TYPE),Windows_NT)
     MKDIR = if not exist $(subst /,\,$(1)) mkdir $(subst /,\,$(1))
     RM = rmdir /s /q
-else # else
+else
     MKDIR = mkdir -p $(1)
     RM = rm -rf
 endif
 
 # sources & flags config
-C_SOURCES = $(shell find $(SRC_DIR) -name "*.c")
+C_SOURCES = $(shell find $(C_CODE_DIR) -name "*.c")
 INC_FLAGS = -I$(SRC_DIR)
 
 # objects config
@@ -66,18 +69,19 @@ $(TMP_DIR)/%.o: $(SRC_DIR)/%.c
 # kernel linking
 $(KERNEL_BIN): $(OBJECTS)
 	@echo "--- Linking Kernel ---"
-	ld -m elf_i386 -Ttext 0x1000 $^ -e main --oformat binary -o $@ || (echo "Linker failed with Error Level $$?"; exit 1)
+	ld -m elf_i386 -T linker.ld $^ -o $@ || (echo "Linker failed"; exit 1)
 
 # bootloader compiling
-$(IMG_NAME): $(KERNEL_BIN) boot.asm
-	@echo "--- Compiling Bootloader (incorporating kernel) ---"
-	nasm -f bin boot.asm -o $@ || (echo "NASM failed with Error Level $$?"; exit 1)
+$(BIN_DIR)/boot.bin: $(BOOT_NAME)
+	@echo "--- Compiling Bootloader ---"
+	nasm -f bin $< -o $@ || (echo "NASM failed"; exit 1)
 
 # creating 512MB virtual hard drive image
-$(HDD_NAME): $(IMG_NAME)
+$(HDD_NAME): $(BIN_DIR)/boot.bin $(KERNEL_BIN)
 	@echo "--- Creating 512MB Virtual Hard Drive Image ---"
 	dd if=/dev/zero of=$@ bs=1M count=512 status=none
-	dd if=$< of=$@ conv=notrunc status=none || (echo "DD failed with Error Level $$?"; exit 1)
+	dd if=$(BIN_DIR)/boot.bin of=$@ conv=notrunc status=none
+	dd if=$(KERNEL_BIN) of=$@ seek=1 conv=notrunc status=none
 
 # run QEMU
 run: $(HDD_NAME)
