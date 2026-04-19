@@ -1,4 +1,5 @@
 #include "miniterminal.h"
+#include "../../utils/calc/calc.h"
 #include "../../utils/console/console.h"
 #include "../../utils/keyboard/keyboard.h"
 #include "../../utils/io/io.h"
@@ -11,6 +12,13 @@ int history_index = -1;
 
 void strcpy(char* dest, const char* src) {
     while ((*dest++ = *src++));
+}
+
+uint8_t hex_to_int(char c) {
+    if (c >= '0' && c <= '9') return c - '0';
+    if (c >= 'a' && c <= 'f') return c - 'a' + 10;
+    if (c >= 'A' && c <= 'F') return c - 'A' + 10;
+    return 0;
 }
 
 void help_cmd_helper(char* name, char* desc) {
@@ -40,7 +48,33 @@ int strncmp(const char* s1, const char* s2, int n) {
 
 void handle_print_logic(char* ptr) {
     char output[2] = {0, 0};
-    while (*ptr && *ptr != '\"') {
+    uint8_t color = 0x0F;
+    char* last_quote = 0;
+    char* tmp = ptr;
+
+    while (*tmp) {
+        if (*tmp == '\"') {
+            if (tmp == ptr || *(tmp - 1) != '\\') {
+                last_quote = tmp;
+            }
+        }
+        tmp++;
+    }
+
+    if (last_quote) {
+        char* search_ptr = last_quote + 1;
+        while (*search_ptr == ' ' || *search_ptr == '\"') search_ptr++;
+
+        if (*search_ptr == '0' && (*(search_ptr + 1) == 'x' || *(search_ptr + 1) == 'X')) {
+            search_ptr += 2;
+            uint8_t high = hex_to_int(*search_ptr);
+            search_ptr++;
+            uint8_t low = hex_to_int(*search_ptr);
+            color = (high << 4) | low;
+        }
+    }
+
+    while (*ptr && ptr != last_quote) {
         if (*ptr == '\\') {
             ptr++;
             if (*ptr == '\\') output[0] = '\\';
@@ -48,13 +82,13 @@ void handle_print_logic(char* ptr) {
             else if (*ptr == 'n') output[0] = '\n';
             else {
                 output[0] = '\\'; 
-                kprint(output, 0x0F);
+                kprint(output, color);
                 output[0] = *ptr;
             }
         } else {
             output[0] = *ptr;
         }
-        kprint(output, 0x0F);
+        kprint(output, color);
         if (*ptr) ptr++;
     }
     kprint("\n", 0x0F);
@@ -63,16 +97,18 @@ void handle_print_logic(char* ptr) {
 void parse_cmd(char* cmd) {
     if (strcmp(cmd, "hlt") == 0 || strcmp(cmd, "halt") == 0) asm volatile ("hlt");
     else if (strcmp(cmd, "cls") == 0 || strcmp(cmd, "clear") == 0) kclear(0x00);
+    else if (strncmp(cmd, "calc ", 5) == 0) handle_calc(cmd + 5);
     else if (strncmp(cmd, "kprint \"", 8) == 0) handle_print_logic(cmd + 8);
     else if (strncmp(cmd, "print \"", 7) == 0) handle_print_logic(cmd + 7);
     else if (strncmp(cmd, "mkstr \"", 7) == 0) handle_print_logic(cmd + 7);
     else if (strcmp(cmd, "help") == 0 || strcmp(cmd, "?") == 0) {
-        kprint("==================== Help ====================", 0x09);
+        kprint("============================== Help ==============================", 0x09);
         help_cmd_helper("hlt/halt", "Stop kernel");
         help_cmd_helper("cls/clear", "Clear screen");
-        help_cmd_helper("print/kprint/mkstr \"text\"", "Print text");
+        help_cmd_helper("calc {expr}", "Calculate math expression");
+        help_cmd_helper("print/kprint \"text\" 0xCOLORCODE", "Print text with specified color");
         help_cmd_helper("?/help", "This help");
-        kprint("\n==============================================\n", 0x09);
+        kprint("\n==================================================================\n", 0x09);
     }
     else {
         kprint("Unknown command: ", 0x04);
