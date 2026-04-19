@@ -1,7 +1,7 @@
 #ifndef VERINFO_H
 #define VERINFO_H
 
-#define VER "v1.1.5.2"
+#define VER "v1.1.5.5"
 
 #endif
 
