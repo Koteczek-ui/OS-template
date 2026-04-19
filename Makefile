@@ -36,7 +36,7 @@ C_SOURCES = $(shell find $(C_CODE_DIR) -name "*.c")
 INC_FLAGS = -I$(SRC_DIR)
 
 # objects config
-OBJECTS = $(patsubst $(SRC_DIR)/%.c,$(TMP_DIR)/%.o,$(C_SOURCES))
+OBJECTS = $(patsubst $(C_CODE_DIR)/%.c,$(TMP_DIR)/c/%.o,$(C_SOURCES))
 ASM_INTERRUPTS_OBJ = $(TMP_DIR)/asm/interrupts.o
 
 all: check_tools build_dirs $(HDD_NAME) run
@@ -47,20 +47,10 @@ check_tools:
 	@for tool in nasm gcc ld qemu-system-i386; do \
 		if ! command -v $$tool > /dev/null 2>&1; then \
 			echo "ERROR: $$tool is not installed."; \
-			echo -n "Do you want to install $$tool? (y/n): "; \
-			read choice; \
-			if [ "$$choice" = "y" ]; then \
-				if [ "$(OS_TYPE)" = "Windows_NT" ]; then \
-					echo "Please install $$tool manually on Windows."; exit 1; \
-				else \
-					if [ "$$tool" = "nasm" ]; then sudo apt install nasm; \
-					elif [ "$$tool" = "gcc" ]; then sudo apt install gcc-multilib; \
-					elif [ "$$tool" = "qemu-system-i386" ]; then sudo apt install qemu-system-x86; \
-					else sudo apt install $$tool; \
-					fi; \
-				fi; \
+			if [ "$(OS_TYPE)" = "Windows_NT" ]; then \
+				echo "Please install $$tool manually on Windows."; exit 1; \
 			else \
-				echo "Aborting: $$tool is required."; exit 1; \
+				sudo apt install python3-$$tool; \
 			fi; \
 		fi; \
 	done
@@ -70,14 +60,22 @@ check_tools:
 build_dirs:
 	@$(call MKDIR,$(BIN_DIR))
 	@$(call MKDIR,$(TMP_DIR))
+	@$(call MKDIR,$(TMP_DIR)/c)
+	@$(call MKDIR,$(TMP_DIR)/asm)
 
 # compile C files
-$(TMP_DIR)/%.o: $(SRC_DIR)/%.c
+$(TMP_DIR)/c/%.o: $(C_CODE_DIR)/%.c
 	@$(call MKDIR,$(dir $@))
 	@echo "Compiling: $<"
 	gcc -ffreestanding -m32 -fno-pie -fno-stack-protector -c $< -o $@ $(INC_FLAGS) || (echo "GCC failed on $< with Error Level $$?"; exit 1)
 
-# kernel linking
+# interrupts.asm compiling
+$(ASM_INTERRUPTS_OBJ): $(INTERUPPTS_NAME)
+	@$(call MKDIR,$(dir $@))
+	@echo "--- Compiling ASM Interrupts ---"
+	nasm -f elf32 $< -o $@ || (echo "NASM failed on $<"; exit 1)
+
+# kernel linking - checks if objects in TMP_DIR exist
 $(KERNEL_BIN): $(OBJECTS) $(ASM_INTERRUPTS_OBJ)
 	@echo "--- Linking Kernel ---"
 	ld -m elf_i386 -T linker.ld $^ -o $@ || (echo "Linker failed"; exit 1)
@@ -86,14 +84,8 @@ $(KERNEL_BIN): $(OBJECTS) $(ASM_INTERRUPTS_OBJ)
 $(BIN_DIR)/boot.bin: $(BOOT_NAME)
 	@echo "--- Compiling Bootloader ---"
 	nasm -f bin $< -o $@ || (echo "NASM failed"; exit 1)
-	
-# interrupts.asm compiling
-$(ASM_INTERRUPTS_OBJ): $(INTERUPPTS_NAME)
-	@$(call MKDIR,$(dir $@))
-	@echo "--- Compiling ASM Interrupts ---"
-	nasm -f elf32 $< -o $@ || (echo "NASM failed on $<"; exit 1)
 
-# creating 512MB virtual hard drive image
+# creating 512MB virtual hard drive image - dependency on KERNEL_BIN and boot.bin
 $(HDD_NAME): $(BIN_DIR)/boot.bin $(KERNEL_BIN)
 	@echo "--- Creating 512MB Virtual Hard Drive Image ---"
 	dd if=/dev/zero of=$@ bs=1M count=512 status=none
