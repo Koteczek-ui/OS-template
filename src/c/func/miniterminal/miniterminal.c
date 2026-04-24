@@ -115,7 +115,7 @@ void parse_cmd(char* cmd) {
         help_cmd_helper("cls/clear", "Clear screen");
         help_cmd_helper("calc {expr}", "Calculate math expression");
         help_cmd_helper("kprint/print/mkstr \"text\" 0xCOLORCODE", "Print text with specified color");
-        help_cmd_helper("colormatrix", "Show color matrix");
+        help_cmd_helper("colormatrix", "Show color matrix (EPILSEPSY WARNING!)");
         help_cmd_helper("?/help", "This help");
         kprint("\n==================================================================\n", 0x09);
     }
