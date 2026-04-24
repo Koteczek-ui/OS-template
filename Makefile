@@ -85,12 +85,15 @@ $(BIN_DIR)/boot.bin: $(BOOT_NAME)
 	@echo "--- Compiling Bootloader ---"
 	nasm -f bin $< -o $@ || (echo "NASM failed"; exit 1)
 
-# creating 512MB virtual hard drive image - dependency on KERNEL_BIN and boot.bin
+# updating hard drive image without wiping data sectors
 $(HDD_NAME): $(BIN_DIR)/boot.bin $(KERNEL_BIN)
-	@echo "--- Creating 512MB Virtual Hard Drive Image ---"
-	dd if=/dev/zero of=$@ bs=1M count=512 status=none
-	dd if=$(BIN_DIR)/boot.bin of=$@ conv=notrunc status=none
-	dd if=$(KERNEL_BIN) of=$@ seek=1 conv=notrunc status=none
+	@echo "--- Updating harddrive image ---"
+	@if [ ! -f $(HDD_NAME) ]; then \
+		echo "Creating new 512MB image..."; \
+		dd if=/dev/zero of=$(HDD_NAME) bs=1M count=512; \
+	fi
+	@dd if=$(BIN_DIR)/boot.bin of=$(HDD_NAME) conv=notrunc
+	@dd if=$(KERNEL_BIN) of=$(HDD_NAME) seek=1 conv=notrunc
 
 # run QEMU
 run: $(HDD_NAME)

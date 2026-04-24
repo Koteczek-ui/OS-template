@@ -9,9 +9,20 @@ SECTIONS
     {
         *(.entry)
         *(.text)
+        *(.rodata*)
     }
 
-    .data : { *(.data) }
-    .bss  : { *(.bss) }
+    .data : 
+    { 
+        *(.data) 
+    }
+
+    .bss : 
+    { 
+        *(.bss) 
+        *(COMMON) 
+    }
+
+    . = ALIGN(4096);
 }
 
