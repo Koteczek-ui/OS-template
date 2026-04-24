@@ -9,7 +9,7 @@ void setup() {
 }
 
 __attribute__((section(".entry")))
-void main() {
+void kmain() {
     setup();
 }
 
