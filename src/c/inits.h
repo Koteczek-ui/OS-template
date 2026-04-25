@@ -17,7 +17,7 @@ static inline void print_welcome() {
 }
 
 static inline void console_init() {
-    kclear(0x00);
+    kcls(0x00);
     print_welcome();
 }
 
@@ -32,8 +32,8 @@ static inline void basic_init() {
 }
 
 static inline void init() {
-    basic_init();
     console_init();
+    basic_init();
 }
 
 #endif

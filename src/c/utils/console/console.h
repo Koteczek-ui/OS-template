@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 void kprint(const char* text, char color);
-void kclear(char color);
+void kcls(char color);
 
 void scroll();
 void scroll_view_up();

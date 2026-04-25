@@ -58,3 +58,17 @@ int strncmp(const char* s1, const char* s2, uint32_t n) {
     return *(uint8_t*)s1 - *(uint8_t*)s2;
 }
 
+char* strchr(const char* s, int c) {
+    while (*s != (char)c) {
+        if (!*s++) return 0;
+    }
+    return (char*)s;
+}
+
+char* strncpy(char* dest, const char* src, uint32_t n) {
+    uint32_t i;
+    for (i = 0; i < n && src[i] != '\0'; i++) dest[i] = src[i];
+    for (; i < n; i++) dest[i] = '\0';
+    return dest;
+}
+

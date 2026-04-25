@@ -11,6 +11,8 @@ uint32_t strlen(const char* s);
 char* strcpy(char* dest, const char* src);
 char* strcat(char* dest, const char* src);
 char* strrchr(const char* s, int c);
+char* strchr(const char* s, int c);
+char* strncpy(char* dest, const char* src, uint32_t n);
 
 #endif
 

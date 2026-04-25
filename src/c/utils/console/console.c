@@ -65,13 +65,17 @@ void kprint(const char* text, char color) {
     set_cur_pos(cur_y * MAX_CUR_X + cur_x);
 }
 
-void kclear(char color) {
+void kcls(char color) {
     char* video_mem = (char*) 0xb8000;
     for (int i = 0; i < MAX_CUR_X * MAX_CUR_Y * 2; i += 2) {
         video_mem[i] = ' ';
         video_mem[i + 1] = color;
     }
     
+    cur_x = 0;
+    cur_y = 0;
+    video_offset = 0;
+    update_video_offset();
     set_cur_pos(0);
 }
 

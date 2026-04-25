@@ -6,13 +6,16 @@
 #include "../../utils/io/io.h"
 #include "../../utils/str/str.h"
 
-#define MAX_HISTORY 25
 char history[MAX_HISTORY][256];
 int history_count = 0;
 int history_index = -1;
 
 int ctrl_pressed = 0;
+
 int is_cmd_running = 0;
+
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 uint8_t hex_to_int(char c) {
     if (c >= '0' && c <= '9') return c - '0';
@@ -27,6 +30,12 @@ void help_cmd_helper(char* name, char* desc) {
     kprint(" - ", 0x01);
     kprint(desc, 0x09);
 }
+void help_cmd_category_splitter_c(char* category) {
+    kprint("\n      --- ", 0x0F);
+    kprint(category, 0x0E);
+    kprint(" ---", 0x0F);
+}
+void help_cmd_category_splitter_a() { kprint("\n      ------------------------", 0x0F); }
 
 int should_interrupt() {
     if (inb(0x64) & 1) {
@@ -104,26 +113,51 @@ void parse_cmd(char* cmd) {
     is_cmd_running = 1;
     
     if (strcmp(cmd, "hlt") == 0 || strcmp(cmd, "halt") == 0) asm volatile ("hlt");
-    else if (strcmp(cmd, "cls") == 0 || strcmp(cmd, "clear") == 0) kclear(0x00);
+    else if (strncmp(cmd, "cls", 3) == 0 || strncmp(cmd, "clear", 5) == 0) {
+        uint8_t color = 0x00;
+        char* ptr = cmd;
+
+        while (*ptr && *ptr != ' ') ptr++;
+        while (*ptr == ' ') ptr++;
+
+        if (*ptr == '0' && (*(ptr + 1) == 'x' || *(ptr + 1) == 'X')) {
+            ptr += 2;
+            uint8_t high = hex_to_int(*ptr);
+            ptr++;
+            uint8_t low = hex_to_int(*ptr);
+            color = (high << 4) | low;
+        }
+
+        kcls(color);
+    }
     else if (strncmp(cmd, "calc ", 5) == 0) handle_calc(cmd + 5);
     else if (strncmp(cmd, "kprint \"", 8) == 0) handle_print_logic(cmd + 8);
     else if (strncmp(cmd, "print \"", 7) == 0) handle_print_logic(cmd + 7);
     else if (strncmp(cmd, "mkstr \"", 7) == 0) handle_print_logic(cmd + 7);
     else if (strcmp(cmd, "help") == 0 || strcmp(cmd, "?") == 0) {
         kprint("============================== Help ==============================", 0x09);
+        
+        help_cmd_category_splitter_c("Basic");
         help_cmd_helper("hlt/halt", "Stop kernel");
-        help_cmd_helper("cls/clear", "Clear screen");
         help_cmd_helper("calc {expr}", "Calculate math expression");
-        help_cmd_helper("kprint/print/mkstr \"text\" 0xCOLORCODE", "Print text with specified color");
-        help_cmd_helper("colormatrix", "Show color matrix (EPILSEPSY WARNING!)");
-        help_cmd_helper("?/help", "This help");
+        help_cmd_category_splitter_a();
+        help_cmd_helper("cls/clear 0xCC", "Clear screen with color (CC = hex code)");
+        help_cmd_helper("kprint/print/mkstr \"text\" 0xCC", "Print text with color (CC = hex code)");
+        help_cmd_category_splitter_c("Keyboard & Navigation");
+        help_cmd_helper("UP/DOWN arrows", "Browse command history (MAX " STR(MAX_HISTORY) ")");
+        help_cmd_helper("PGUP/PGDN", "Scroll terminal view");
+        help_cmd_helper("CTRL+C", "Interrupt running command");
+        help_cmd_category_splitter_c("Others");
+        help_cmd_helper("colormatrix", "Show color matrix (EPILEPSY WARNING!)");
+        help_cmd_helper("?/help", "This help menu");
+        
         kprint("\n==================================================================\n", 0x09);
     }
     else if (strcmp(cmd, "colormatrix") == 0) handle_all_matrix_cmd();
     else {
         kprint("Unknown command: ", 0x04);
         kprint(cmd, 0x0C);
-        kprint("\n", 0x00);
+        kprint("\n", 0x0F);
     }
     
     is_cmd_running = 0;
@@ -131,7 +165,6 @@ void parse_cmd(char* cmd) {
 
 void input() { kprint("> ", 0x01); }
 void cmd_out(char* cmd_buffer) { kprint(cmd_buffer, 0x03); }
-
 void start_terminal() {
     char cmd_buffer[256];
     int cmd_index = 0;
@@ -245,3 +278,4 @@ void start_terminal() {
         }
     }
 }
+
