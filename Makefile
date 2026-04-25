@@ -50,7 +50,7 @@ check_tools:
 			if [ "$(OS_TYPE)" = "Windows_NT" ]; then \
 				echo "Please install $$tool manually on Windows."; exit 1; \
 			else \
-				sudo apt install python3-$$tool; \
+				echo "Please install $$tool by using 'sudo apt install $$tool'"; exit 1; \
 			fi; \
 		fi; \
 	done
@@ -109,4 +109,3 @@ else
 endif
 
 .PHONY: all check_tools build_dirs run clean
-
