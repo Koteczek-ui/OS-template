@@ -141,8 +141,8 @@ void parse_cmd(char* cmd) {
         help_cmd_helper("hlt/halt", "Stop kernel");
         help_cmd_helper("calc {expr}", "Calculate math expression");
         help_cmd_category_splitter_a();
-        help_cmd_helper("cls/clear 0xCC", "Clear screen with color (CC = hex code)");
-        help_cmd_helper("kprint/print/mkstr \"text\" 0xCC", "Print text with color (CC = hex code)");
+        help_cmd_helper("cls/clear 0xCC", "Clear screen with specified color (CC = hex code)");
+        help_cmd_helper("kprint/print/mkstr \"text\" 0xCC", "Print text with specified color (CC = hex code)");
         help_cmd_category_splitter_c("Keyboard & Navigation");
         help_cmd_helper("UP/DOWN arrows", "Browse command history (MAX " STR(MAX_HISTORY) ")");
         help_cmd_helper("PGUP/PGDN", "Scroll terminal view");
