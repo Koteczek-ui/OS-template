@@ -1,4 +1,4 @@
-ENTRY(main)
+ENTRY(kmain)
 OUTPUT_FORMAT(binary)
 
 SECTIONS
@@ -25,4 +25,3 @@ SECTIONS
 
     . = ALIGN(4096);
 }
-
