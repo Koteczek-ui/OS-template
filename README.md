@@ -3,8 +3,7 @@ A simple OS template
 ### Operating system template
 
 ## Makefile:
-- Only supports Windows and Linux; Ubuntu is recommended.
+- Only supports Windows Subsystem for Linux or Linux.
 - To run, type `make` in your terminal.
 - If run doesn't work, make sure `make` is installed.
 - If you do change in code, and it don't change on run, run `make clean`, next `make`.
-
