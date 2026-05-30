@@ -1,0 +1,15 @@
+#ifndef VERINFO_H
+#define VERINFO_H
+
+#define KVER "v1.2.3.1"
+#define KLOAD_SHOW_MSG 0
+#define KALOAD_SHOW_HELLO_MSG 0
+#define KALOAD_SHOW_SUCCESS_MSG 0
+#define KALOAD_SHOW_VER 1
+#define KALOAD_SHOW_ONLY_VER 0
+#define KALINIT_START_TERMINAL 1
+#define KINIT_CLS_SCR 1
+#define KINIT_PRINT_WELCOME 1
+
+#endif
+
